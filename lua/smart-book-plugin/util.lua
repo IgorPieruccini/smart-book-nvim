@@ -70,11 +70,11 @@ function M.read_content(state_file_path)
 	return M.read_state_file(state_file_path)
 end
 
-function M.add_new_tag()
+function M.add_new_tag(tag)
 	local state_file_path = M.get_state_file_path()
 	local content = M.read_state_file(state_file_path)
 	-- Force an object shape so JSON encodes the tag as "{}" instead of "[]".
-	content["new-tag"] = vim.empty_dict()
+	content[tag] = vim.empty_dict()
 
 	M.write_state_file(state_file_path, content)
 end

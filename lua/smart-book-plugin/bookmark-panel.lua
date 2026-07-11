@@ -1,6 +1,7 @@
 local M = {}
 
 local util = require("smart-book-plugin.util")
+local tag_panel = require("smart-book-plugin.add-tag-panel")
 
 local win_id
 
@@ -16,8 +17,9 @@ function M.set_win_key_maps(win, buf)
 		local row = cursor[1] -- Neovim rows are 1-indexed here
 		local line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
 		if line == "Add new tag" then
-			util.add_new_tag()
-			vim.notify("add tag")
+			tag_panel.open_floating_panel()
+			-- util.add_new_tag()
+			-- vim.notify("add tag")
 		end
 	end, {
 		buffer = buf,
