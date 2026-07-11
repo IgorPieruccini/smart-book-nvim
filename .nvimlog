@@ -1,0 +1,5 @@
+WRN 2026-07-07T13:12:33.054 ?.98751    server_start:199: Failed to start server: operation not permitted: /var/folders/3p/2gqtvjg94gv3b_mj35pmkmz00000gn/T/nvim.igorpieruccini/8Vph7C/nvim.98751.0
+WRN 2026-07-07T13:12:37.708 ?.98765    server_start:199: Failed to start server: operation not permitted: /var/folders/3p/2gqtvjg94gv3b_mj35pmkmz00000gn/T/nvim.igorpieruccini/mLr8sB/nvim.98765.0
+WRN 2026-07-07T13:19:23.452 ?.1651     server_start:199: Failed to start server: operation not permitted: /var/folders/3p/2gqtvjg94gv3b_mj35pmkmz00000gn/T/nvim.igorpieruccini/jrQJHe/nvim.1651.0
+WRN 2026-07-11T09:21:52.291 ?.32332    server_start:199: Failed to start server: operation not permitted: /var/folders/3p/2gqtvjg94gv3b_mj35pmkmz00000gn/T/nvim.igorpieruccini/9ddEer/nvim.32332.0
+WRN 2026-07-11T09:38:48.701 ?.35780    server_start:199: Failed to start server: operation not permitted: /var/folders/3p/2gqtvjg94gv3b_mj35pmkmz00000gn/T/nvim.igorpieruccini/r2wHvD/nvim.35780.0
