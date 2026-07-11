@@ -53,6 +53,10 @@ function M.open_floating_panel()
 	win_id = vim.api.nvim_open_win(buf, true, opts) -- Open a floating window with the buffer
 	M.set_win_key_maps(win_id, buf)
 	M.set_close_key_map()
+
+	-- Prevent user from modifying the buffer
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].readonly = true
 end
 
 function M.close_floating_panel()
