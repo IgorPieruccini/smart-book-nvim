@@ -2,8 +2,38 @@ local M = {}
 
 local win_id
 
+function M.set_add_tag_line(buf)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+		"Add new tag",
+	})
+end
+
+function M.set_win_key_maps(win, buf)
+	vim.keymap.set("n", "<CR>", function()
+		local cursor = vim.api.nvim_win_get_cursor(win)
+		local row = cursor[1] -- Neovim rows are 1-indexed here
+		local line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
+		if line == "Add new tag" then
+			vim.notify("add tag")
+		end
+	end, {
+		buffer = buf,
+		desc = "Add new tag",
+	})
+end
+
+function M.set_close_key_map()
+	vim.keymap.set("n", "q", function()
+		M.close_floating_panel()
+	end, {
+		desc = "Close smart book panel",
+	})
+end
+
 function M.open_floating_panel()
 	local buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer
+
+	M.set_add_tag_line(buf)
 
 	local width = math.floor(vim.o.columns * 0.8)
 	local height = math.floor(vim.o.lines * 0.8)
@@ -21,6 +51,8 @@ function M.open_floating_panel()
 	}
 
 	win_id = vim.api.nvim_open_win(buf, true, opts) -- Open a floating window with the buffer
+	M.set_win_key_maps(win_id, buf)
+	M.set_close_key_map()
 end
 
 function M.close_floating_panel()
