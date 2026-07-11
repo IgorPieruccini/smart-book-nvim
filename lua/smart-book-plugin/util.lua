@@ -55,9 +55,28 @@ function M.create_state_file(state_file_path)
 	end
 end
 
+function M.write_state_file(state_file_path, content)
+	local file = io.open(state_file_path, "w")
+	if file then
+		file:write(vim.json.encode(content))
+		file:close()
+	else
+		print("Error writing to state file: " .. state_file_path)
+	end
+end
+
 function M.read_content(state_file_path)
 	M.create_state_file(state_file_path)
 	return M.read_state_file(state_file_path)
+end
+
+function M.add_new_tag()
+	local state_file_path = M.get_state_file_path()
+	local content = M.read_state_file(state_file_path)
+	-- Force an object shape so JSON encodes the tag as "{}" instead of "[]".
+	content["new-tag"] = vim.empty_dict()
+
+	M.write_state_file(state_file_path, content)
 end
 
 return M

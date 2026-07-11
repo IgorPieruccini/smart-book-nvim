@@ -32,7 +32,7 @@ function M.get_current_location()
 
 	local new_content = vim.tbl_extend("force", content, { [tag] = updated_content })
 
-	vim.fn.writefile({ vim.json.encode(new_content) }, state_file_path)
+	util.write_state_file(state_file_path, new_content)
 
 	print("New smart book:" .. key)
 end
