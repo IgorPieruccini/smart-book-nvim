@@ -1,28 +1,38 @@
 local M = {}
 
-local util = require("smart-book-plugin.util")
 local tag_panel = require("smart-book-plugin.add-tag-panel")
+local util = require("smart-book-plugin.util")
 
 local win_id
+local buf
 
-function M.set_add_tag_line(buf)
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+function M.set_add_tag_line(cur_buf)
+	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {
 		"Add new tag",
 	})
 end
 
-function M.set_win_key_maps(win, buf)
+function M.set_tags(cur_buf)
+	local content = util.read_content(util.get_state_file_path())
+	-- grab all the tags by extracting the root keys from the content table
+	local tags = content and vim.tbl_keys(content) or {}
+
+	-- for each tag in tags set the buffer line
+	for i, tag in ipairs(tags) do
+		vim.api.nvim_buf_set_lines(cur_buf, i, i, false, { tag })
+	end
+end
+
+function M.set_win_key_maps(win, cur_buf)
 	vim.keymap.set("n", "<CR>", function()
 		local cursor = vim.api.nvim_win_get_cursor(win)
 		local row = cursor[1] -- Neovim rows are 1-indexed here
-		local line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
+		local line = vim.api.nvim_buf_get_lines(cur_buf, row - 1, row, false)[1]
 		if line == "Add new tag" then
 			tag_panel.open_floating_panel()
-			-- util.add_new_tag()
-			-- vim.notify("add tag")
 		end
 	end, {
-		buffer = buf,
+		buffer = cur_buf,
 		desc = "Add new tag",
 	})
 end
@@ -36,9 +46,10 @@ function M.set_close_key_map()
 end
 
 function M.open_floating_panel()
-	local buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer
+	buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer
 
 	M.set_add_tag_line(buf)
+	M.set_tags(buf)
 
 	local width = math.floor(vim.o.columns * 0.8)
 	local height = math.floor(vim.o.lines * 0.8)
