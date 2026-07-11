@@ -63,4 +63,9 @@ function M.open_current_buffer()
 	print("Opened saved location")
 end
 
+function M.toggle_bookmark_panel()
+	local floating_panel = require("smart-book-plugin.floating_panel")
+	floating_panel.toggle_floating_panel()
+end
+
 return M
