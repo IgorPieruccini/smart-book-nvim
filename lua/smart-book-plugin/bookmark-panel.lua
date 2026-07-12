@@ -6,7 +6,7 @@ local util = require("smart-book-plugin.util")
 local win_id
 local buf
 
-local panel_type = "tag" -- can be tag or bookmark
+local cur_tag -- current tag
 
 function M.set_add_tag_line(cur_buf)
 	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {
@@ -50,6 +50,33 @@ function M.go_to_tag_bookmarks(tag, cur_buf)
 
 	vim.bo[cur_buf].modifiable = false
 	vim.bo[cur_buf].readonly = true
+	cur_tag = tag
+end
+
+function M.open_current_buffer(tag)
+	local state_file_path = util.get_state_file_path()
+	local content = util.read_content(state_file_path)
+	local tag_content = content[tag] or {}
+
+	-- if tag is empty, return
+	if tag_content == nil or vim.tbl_isempty(tag_content) then
+		print("No saved locations for tag: " .. tag)
+		return
+	end
+
+	-- for now open the first bookmark of the tag
+	local first_key = tag_content and next(tag_content) or nil
+	local first_book_mark_content = tag_content[first_key] or {}
+
+	if first_book_mark_content == nil or vim.tbl_isempty(first_book_mark_content) then
+		print("bookmark not found")
+		return
+	end
+
+	vim.cmd.edit(vim.fn.fnameescape(first_book_mark_content.file))
+	vim.api.nvim_win_set_cursor(0, { first_book_mark_content.line, first_book_mark_content.col })
+
+	print("Opened saved location")
 end
 
 function M.set_win_key_maps(win, cur_buf)
@@ -57,15 +84,22 @@ function M.set_win_key_maps(win, cur_buf)
 		local cursor = vim.api.nvim_win_get_cursor(win)
 		local row = cursor[1] -- Neovim rows are 1-indexed here
 		local line = vim.api.nvim_buf_get_lines(cur_buf, row - 1, row, false)[1]
+
 		if line == "Add new tag" then
 			tag_panel.open_floating_panel(win)
-		else
-			if #line > 5 then
-				-- go to bookmark of the tag
-				M.go_to_tag_bookmarks(line, cur_buf)
-			else
-				vim.notify("Tag invalid tag", vim.log.levels.ERROR)
-			end
+			return
+		end
+
+		if cur_tag == nil and #line > 5 then
+			-- go to bookmark of the tag
+			M.go_to_tag_bookmarks(line, cur_buf)
+			return
+		end
+
+		if cur_tag ~= nil then
+			-- open buffer at bookmark
+			M.open_current_buffer(cur_tag)
+			return
 		end
 	end, {
 		buffer = cur_buf,
