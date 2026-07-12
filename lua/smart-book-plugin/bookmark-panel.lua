@@ -6,6 +6,8 @@ local util = require("smart-book-plugin.util")
 local win_id
 local buf
 
+local panel_type = "tag" -- can be tag or bookmark
+
 function M.set_add_tag_line(cur_buf)
 	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {
 		"Add new tag",
@@ -23,13 +25,47 @@ function M.set_tags(cur_buf)
 	end
 end
 
+function M.go_to_tag_bookmarks(tag, cur_buf)
+	local content = util.read_content(util.get_state_file_path())
+	local tag_content = content[tag]
+
+	vim.bo[cur_buf].modifiable = true
+	vim.bo[cur_buf].readonly = false
+	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {})
+	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, { "Bookmarks for tag: " .. tag, "<" })
+
+	local row = 2
+	for bookmark_name, bookmark in pairs(tag_content or {}) do
+		local line_number = bookmark.line_number
+
+		vim.api.nvim_buf_set_lines(
+			cur_buf,
+			row,
+			row,
+			false,
+			{ row - 1 .. " " .. bookmark_name .. ":" .. tostring(line_number) }
+		)
+		row = row + 1
+	end
+
+	vim.bo[cur_buf].modifiable = false
+	vim.bo[cur_buf].readonly = true
+end
+
 function M.set_win_key_maps(win, cur_buf)
 	vim.keymap.set("n", "<CR>", function()
 		local cursor = vim.api.nvim_win_get_cursor(win)
 		local row = cursor[1] -- Neovim rows are 1-indexed here
 		local line = vim.api.nvim_buf_get_lines(cur_buf, row - 1, row, false)[1]
 		if line == "Add new tag" then
-			tag_panel.open_floating_panel()
+			tag_panel.open_floating_panel(win)
+		else
+			if #line > 5 then
+				-- go to bookmark of the tag
+				M.go_to_tag_bookmarks(line, cur_buf)
+			else
+				vim.notify("Tag invalid tag", vim.log.levels.ERROR)
+			end
 		end
 	end, {
 		buffer = cur_buf,

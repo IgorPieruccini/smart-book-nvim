@@ -3,6 +3,7 @@ local M = {}
 local util = require("smart-book-plugin.util")
 
 local win_id
+local return_win_id
 
 function M.submit_tag()
 	local line = vim.trim(vim.api.nvim_get_current_line())
@@ -39,9 +40,22 @@ function M.close_floating_panel()
 		vim.api.nvim_win_close(win_id, true)
 	end
 	win_id = nil
+
+	local target_win = return_win_id
+	return_win_id = nil
+
+	if target_win and vim.api.nvim_win_is_valid(target_win) then
+		vim.schedule(function()
+			if vim.api.nvim_win_is_valid(target_win) then
+				vim.api.nvim_set_current_win(target_win)
+			end
+		end)
+	end
 end
 
-function M.open_floating_panel()
+function M.open_floating_panel(previous_win)
+	return_win_id = previous_win
+
 	local buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer
 
 	local width = math.floor(vim.o.columns * 0.2)
