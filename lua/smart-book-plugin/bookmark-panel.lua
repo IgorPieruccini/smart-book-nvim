@@ -6,7 +6,7 @@ local util = require("smart-book-plugin.util")
 local win_id
 local buf
 
-local cur_tag -- current tag
+local current_tag -- current tag
 
 function M.set_add_tag_line(cur_buf)
 	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {
@@ -36,24 +36,18 @@ function M.go_to_tag_bookmarks(tag, cur_buf)
 
 	local row = 2
 	for bookmark_name, bookmark in pairs(tag_content or {}) do
-		local line_number = bookmark.line_number
+		local line_number = bookmark.line
 
-		vim.api.nvim_buf_set_lines(
-			cur_buf,
-			row,
-			row,
-			false,
-			{ row - 1 .. " " .. bookmark_name .. ":" .. tostring(line_number) }
-		)
+		vim.api.nvim_buf_set_lines(cur_buf, row, row, false, { row - 1 .. " " .. bookmark_name })
 		row = row + 1
 	end
 
 	vim.bo[cur_buf].modifiable = false
 	vim.bo[cur_buf].readonly = true
-	cur_tag = tag
+	current_tag = tag
 end
 
-function M.open_current_buffer(tag)
+function M.open_current_buffer(tag, line)
 	local state_file_path = util.get_state_file_path()
 	local content = util.read_content(state_file_path)
 	local tag_content = content[tag] or {}
@@ -64,17 +58,41 @@ function M.open_current_buffer(tag)
 		return
 	end
 
-	-- for now open the first bookmark of the tag
-	local first_key = tag_content and next(tag_content) or nil
-	local first_book_mark_content = tag_content[first_key] or {}
+	local rendered_line = line:match("^%d+%s+(.*)$") or line
+	vim.notify("Rendered line: " .. rendered_line, vim.log.levels.INFO)
+	local bookmark_key
+	for key, _ in pairs(tag_content) do
+		if key and string.find(key, rendered_line, 1, true) then
+			bookmark_key = key
+			break
+		end
+	end
 
-	if first_book_mark_content == nil or vim.tbl_isempty(first_book_mark_content) then
-		print("bookmark not found")
+	if bookmark_key == nil then
+		current_tag = nil
+		vim.notify("Invalid bookmark line format: " .. line, vim.log.levels.ERROR)
 		return
 	end
 
-	vim.cmd.edit(vim.fn.fnameescape(first_book_mark_content.file))
-	vim.api.nvim_win_set_cursor(0, { first_book_mark_content.line, first_book_mark_content.col })
+	local data = tag_content[bookmark_key]
+
+	local file = data.file
+	local line = data.line
+	local col = data.col
+	local bufnr = vim.fn.bufnr(file)
+	local winid = bufnr ~= -1 and vim.fn.bufwinid(bufnr) or -1
+
+	-- close the booknark panel before opening the buffer
+	vim.api.nvim_win_close(win_id, true)
+	current_tag = nil
+
+	if winid ~= -1 then
+		vim.api.nvim_set_current_win(winid)
+	else
+		vim.cmd("tabedit " .. vim.fn.fnameescape(file))
+	end
+
+	vim.api.nvim_win_set_cursor(0, { line, col })
 
 	print("Opened saved location")
 end
@@ -90,15 +108,15 @@ function M.set_win_key_maps(win, cur_buf)
 			return
 		end
 
-		if cur_tag == nil and #line > 5 then
+		if current_tag == nil and #line > 5 then
 			-- go to bookmark of the tag
 			M.go_to_tag_bookmarks(line, cur_buf)
 			return
 		end
 
-		if cur_tag ~= nil then
+		if current_tag ~= nil then
 			-- open buffer at bookmark
-			M.open_current_buffer(cur_tag)
+			M.open_current_buffer(current_tag, line)
 			return
 		end
 	end, {
