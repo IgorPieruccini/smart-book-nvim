@@ -19,10 +19,21 @@ function M.set_tags(cur_buf)
 	-- grab all the tags by extracting the root keys from the content table
 	local tags = content and vim.tbl_keys(content) or {}
 
+	-- Prevent user from modifying the buffer
+	vim.bo[buf].modifiable = true
+	vim.bo[buf].readonly = false
+
+	-- clear the buffer before setting the lines
+	vim.api.nvim_buf_set_lines(cur_buf, 1, -1, false, {})
+
 	-- for each tag in tags set the buffer line
 	for i, tag in ipairs(tags) do
 		vim.api.nvim_buf_set_lines(cur_buf, i, i, false, { tag })
 	end
+
+	current_tag = nil
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].readonly = true
 end
 
 function M.go_to_tag_bookmarks(tag, cur_buf)
@@ -35,9 +46,7 @@ function M.go_to_tag_bookmarks(tag, cur_buf)
 	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, { "Bookmarks for tag: " .. tag, "<" })
 
 	local row = 2
-	for bookmark_name, bookmark in pairs(tag_content or {}) do
-		local line_number = bookmark.line
-
+	for bookmark_name, _ in pairs(tag_content or {}) do
 		vim.api.nvim_buf_set_lines(cur_buf, row, row, false, { row - 1 .. " " .. bookmark_name })
 		row = row + 1
 	end
@@ -111,6 +120,11 @@ function M.set_win_key_maps(win, cur_buf)
 		if current_tag == nil and #line > 5 then
 			-- go to bookmark of the tag
 			M.go_to_tag_bookmarks(line, cur_buf)
+			return
+		end
+
+		if current_tag ~= nil and line == "<" then
+			M.set_tags(cur_buf)
 			return
 		end
 
