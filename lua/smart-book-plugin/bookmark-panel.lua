@@ -114,7 +114,7 @@ function M.open_current_buffer(tag, line)
 	if winid ~= -1 then
 		vim.api.nvim_set_current_win(winid)
 	else
-		vim.cmd("tabedit " .. vim.fn.fnameescape(file))
+		vim.cmd("edit " .. vim.fn.fnameescape(file))
 	end
 
 	vim.api.nvim_win_set_cursor(0, { line, col })
