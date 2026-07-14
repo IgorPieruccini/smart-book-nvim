@@ -8,6 +8,20 @@ local buf
 
 local current_tag -- current tag
 
+function M.refresh_current_view()
+	if not buf or not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_buf_is_loaded(buf) then
+		return
+	end
+
+	if current_tag ~= nil then
+		M.go_to_tag_bookmarks(current_tag, buf)
+		return
+	end
+
+	M.set_add_tag_line(buf)
+	M.set_tags(buf)
+end
+
 function M.set_add_tag_line(cur_buf)
 	vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, {
 		"Add new tag",
@@ -233,8 +247,13 @@ function M.set_bookmark()
 	local new_content = vim.tbl_extend("force", content, { [current_tag] = updated_content })
 
 	util.write_state_file(state_file_path, new_content)
+	M.refresh_current_view()
 
 	print("New smart book:" .. key)
 end
+
+tag_panel.set_refresh_callback(function()
+	M.refresh_current_view()
+end)
 
 return M

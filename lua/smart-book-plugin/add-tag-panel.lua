@@ -4,6 +4,11 @@ local util = require("smart-book-plugin.util")
 
 local win_id
 local return_win_id
+local refresh_callback
+
+function M.set_refresh_callback(callback)
+	refresh_callback = callback
+end
 
 function M.submit_tag()
 	local line = vim.trim(vim.api.nvim_get_current_line())
@@ -15,6 +20,9 @@ function M.submit_tag()
 	end
 
 	util.add_new_tag(line)
+	if refresh_callback then
+		refresh_callback()
+	end
 	vim.notify("new tag: " .. line)
 	vim.cmd("stopinsert")
 	M.close_floating_panel()
