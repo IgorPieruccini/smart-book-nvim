@@ -20,8 +20,8 @@ function M.set_tags(cur_buf)
 	local tags = content and vim.tbl_keys(content) or {}
 
 	-- Prevent user from modifying the buffer
-	vim.bo[buf].modifiable = true
-	vim.bo[buf].readonly = false
+	vim.bo[cur_buf].modifiable = true
+	vim.bo[cur_buf].readonly = false
 
 	-- clear the buffer before setting the lines
 	vim.api.nvim_buf_set_lines(cur_buf, 1, -1, false, {})
@@ -32,8 +32,8 @@ function M.set_tags(cur_buf)
 	end
 
 	current_tag = nil
-	vim.bo[buf].modifiable = false
-	vim.bo[buf].readonly = true
+	vim.bo[cur_buf].modifiable = false
+	vim.bo[cur_buf].readonly = true
 end
 
 function M.go_to_tag_bookmarks(tag, cur_buf)
@@ -78,7 +78,6 @@ function M.open_current_buffer(tag, line)
 	end
 
 	if bookmark_key == nil then
-		current_tag = nil
 		vim.notify("Invalid bookmark line format: " .. line, vim.log.levels.ERROR)
 		return
 	end
@@ -91,9 +90,12 @@ function M.open_current_buffer(tag, line)
 	local bufnr = vim.fn.bufnr(file)
 	local winid = bufnr ~= -1 and vim.fn.bufwinid(bufnr) or -1
 
-	-- close the booknark panel before opening the buffer
+	-- close the bookmark panel before opening the buffer
+	if buf and vim.api.nvim_buf_is_valid(buf) then
+		vim.bo[buf].bufhidden = "hide"
+	end
+
 	vim.api.nvim_win_close(win_id, true)
-	current_tag = nil
 
 	if winid ~= -1 then
 		vim.api.nvim_set_current_win(winid)
@@ -148,10 +150,12 @@ function M.set_close_key_map()
 end
 
 function M.open_floating_panel()
-	buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer
-
-	M.set_add_tag_line(buf)
-	M.set_tags(buf)
+	if buf == nil or not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_buf_is_loaded(buf) then
+		buf = vim.api.nvim_create_buf(false, true) -- Create a new buffer if the previous one is invalid or unloaded
+		vim.bo[buf].bufhidden = "hide"
+		M.set_add_tag_line(buf)
+		M.set_tags(buf)
+	end
 
 	local width = math.floor(vim.o.columns * 0.8)
 	local height = math.floor(vim.o.lines * 0.8)
@@ -179,6 +183,7 @@ end
 
 function M.close_floating_panel()
 	if win_id and vim.api.nvim_win_is_valid(win_id) then
+		vim.bo[buf].bufhidden = "hide"
 		vim.api.nvim_win_close(win_id, true)
 	end
 	win_id = nil
